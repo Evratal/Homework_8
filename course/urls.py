@@ -8,7 +8,6 @@ from .views import (
     LessonListCreateAPIView,
     LessonRetrieveUpdateDestroyAPIView,
 )
-
 app_name = CourseConfig.name
 
 router = DefaultRouter()
