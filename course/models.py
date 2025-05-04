@@ -32,7 +32,7 @@ class Course(models.Model):
 
 class Lesson(models.Model):
     course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="courses", verbose_name="Курс"
+        Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс"
     )
     title = models.CharField(
         max_length=255,
@@ -54,8 +54,7 @@ class Lesson(models.Model):
         verbose_name="Ссылка на видео",
         help_text="Добавьте ссылку на видео",
     )
- 
- 
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
