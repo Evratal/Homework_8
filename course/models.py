@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinLengthValidator, URLValidator
-
+from django.core.validators import URLValidator
+from .validators import validate_youtube_url
 
 class Course(models.Model):
     owner = models.ForeignKey(
@@ -67,6 +68,12 @@ class Lesson(models.Model):
     video_link = models.URLField(
         verbose_name="Ссылка на видео",
         help_text="Добавьте ссылку на видео",
+    )
+    video_link = models.URLField(
+        verbose_name="Ссылка на видео",
+        validators=[URLValidator(), validate_youtube_url],
+        blank=True,
+        null=True
     )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")

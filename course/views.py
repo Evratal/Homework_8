@@ -3,10 +3,12 @@ from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsModerator, IsOwner
+from .paginators import LessonPaginator, CoursePaginator
 
 
 # Для курсов (ViewSets)
 class CourseViewSet(viewsets.ModelViewSet):
+    pagination_class = CoursePaginator
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
@@ -24,6 +26,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 # Для уроков (Generic-классы)
 class LessonListCreateAPIView(generics.ListCreateAPIView):
+    pagination_class = LessonPaginator
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
 
@@ -38,9 +41,16 @@ class LessonListCreateAPIView(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
     def get_queryset(self):
-        if self.request.user.groups.filter(name='moderators').exists():
-            return Lesson.objects.all()
-        return Lesson.objects.filter(owner=self.request.user)
+        queryset = Lesson.objects.all()
+        course_id = self.kwargs.get('course_id')
+
+        if course_id:
+            queryset = queryset.filter(course_id=course_id)
+
+        if not self.request.user.groups.filter(name='moderators').exists():
+            queryset = queryset.filter(owner=self.request.user)
+
+        return queryset
 
 class LessonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lesson.objects.all()

@@ -5,6 +5,13 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 import django_filters
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import Subscription
+from course.models import Course
+
 
 from .models import User, Payment
 from .serializers import (
@@ -66,3 +73,26 @@ class UserDetailView(generics.RetrieveAPIView):
     serializer_class = UserDetailSerializer
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
+
+
+class SubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = request.data.get('course_id')
+        course = get_object_or_404(Course, id=course_id)
+
+        subscription, created = Subscription.objects.get_or_create(
+            user=user,
+            course=course
+        )
+
+        if not created:
+            subscription.delete()
+            message = 'Подписка удалена'
+        else:
+            message = 'Подписка добавлена'
+
+        return Response({"message": message}, status=status.HTTP_200_OK)
+
