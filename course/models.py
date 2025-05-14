@@ -69,12 +69,6 @@ class Lesson(models.Model):
         verbose_name="Ссылка на видео",
         help_text="Добавьте ссылку на видео",
     )
-    video_link = models.URLField(
-        verbose_name="Ссылка на видео",
-        validators=[URLValidator(), validate_youtube_url],
-        blank=True,
-        null=True
-    )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")

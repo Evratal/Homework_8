@@ -32,10 +32,12 @@ class LessonListCreateAPIView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH']:
-            return [IsAuthenticated(), IsModerator() | IsOwner()]
+            permission_classes = [IsAuthenticated, IsModerator | IsOwner]
         elif self.request.method == 'DELETE':
-            return [IsAuthenticated(), ~IsModerator(), IsOwner()]
-        return [IsAuthenticated()]
+            permission_classes = [IsAuthenticated, ~IsModerator, IsOwner]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
