@@ -8,7 +8,7 @@ from .views import (
     UserRegisterView,
     UserProfileView,
     UserListView,
-    UserDetailView, SubscriptionAPIView,
+    UserDetailView, SubscriptionAPIView, PaymentSuccessView, PaymentCancelView,
 )
 
 app_name = 'users'
@@ -29,4 +29,6 @@ urlpatterns = [
         path("<int:pk>/", UserDetailView.as_view(), name="user-detail"),
     ])),
     path("", include(router.urls)),
+    path('payment/success/', PaymentSuccessView.as_view(), name='payment-success'),
+    path('payment/cancel/', PaymentCancelView.as_view(), name='payment-cancel'),
 ]

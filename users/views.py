@@ -1,3 +1,4 @@
+from drf_yasg import openapi
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,6 +12,13 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Subscription
 from course.models import Course
+from drf_yasg.utils import swagger_auto_schema
+from django.urls import reverse
+from users.service import (
+    create_stripe_product,
+    create_stripe_price,
+    create_stripe_session
+)
 
 
 from .models import User, Payment
@@ -50,6 +58,58 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Создаем продукт и цену в Stripe
+        course = serializer.validated_data.get('paid_course')
+        lesson = serializer.validated_data.get('paid_lesson')
+
+        product_name = course.title if course else lesson.title
+        product = create_stripe_product(product_name, "Оплата обучения")
+        price = create_stripe_price(serializer.validated_data['amount'], product.id)
+
+        # Создаем сессию оплаты
+        success_url = request.build_absolute_uri(
+            f"{reverse('payment-success')}?session_id={{CHECKOUT_SESSION_ID}}"
+        )
+        cancel_url = request.build_absolute_uri(reverse('payment-cancel'))
+
+        session = create_stripe_session(
+            price_id=price.id,
+            success_url=success_url,
+            cancel_url=cancel_url
+        )
+
+        # Сохраняем платеж
+        serializer.save(
+            user=request.user,
+            payment_link=session.url,
+            stripe_session_id=session.id
+        )
+
+        return Response(
+            {'payment_link': session.url},
+            status=status.HTTP_201_CREATED
+        )
+
+class PaymentSuccessView(APIView):
+    """Обработчик успешной оплаты"""
+    def get(self, request):
+        return Response(
+            {"status": "Payment successful"},
+            status=status.HTTP_200_OK
+        )
+
+class PaymentCancelView(APIView):
+    """Обработчик отмены оплаты"""
+    def get(self, request):
+        return Response(
+            {"status": "Payment cancelled"},
+            status=status.HTTP_200_OK
+        )
+
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
@@ -77,6 +137,26 @@ class UserDetailView(generics.RetrieveAPIView):
 
 class SubscriptionAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(                                       #пример описания эндпоинтов
+        operation_description="Подписка/отписка на курс",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'course_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID курса'),
+            },
+            required=['course_id']
+        ),
+        responses={
+            200: openapi.Response(
+                description="Успешная операция",
+                examples={
+                    "application/json": {
+                        "message": "Подписка добавлена"
+                    }
+                }
+            )
+        }
+    )
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -95,4 +175,3 @@ class SubscriptionAPIView(APIView):
             message = 'Подписка добавлена'
 
         return Response({"message": message}, status=status.HTTP_200_OK)
-

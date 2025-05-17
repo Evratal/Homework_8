@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "users",
     "course",
     "django_filters",
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -123,3 +124,5 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
+
+STRIPE_API_KEY = 'pk_test_51RPsNqCDxK5UPEVDMEMkLe8OD9C4q26N8N20f3KjOrZWWWt9ddKa69z7M1EanA6rMdVmq2ojUj2UdRldmIwjXS3000KdMndaJJ'
