@@ -95,6 +95,19 @@ class Payment(models.Model):
         choices=PAYMENT_METHODS,
         verbose_name="Способ оплаты"
     )
+    payment_link = models.URLField(
+        verbose_name="Ссылка на оплату",
+        max_length=500,
+        blank=True,
+        null=True
+    )
+    stripe_session_id = models.CharField(
+        verbose_name="ID сессии Stripe",
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True
+    )
 
     class Meta:
         verbose_name = "Платеж"
@@ -106,6 +119,9 @@ class Payment(models.Model):
                 name="payment_has_course_or_lesson"
             )
         ]
+
+    def __str__(self):
+        return f"Платёж #{self.id} ({self.user.email})"
 
     def __str__(self):
         return f"Платёж #{self.id} ({self.user.email})"

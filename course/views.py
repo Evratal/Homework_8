@@ -4,6 +4,8 @@ from .serializers import CourseSerializer, LessonSerializer
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsModerator, IsOwner
 from .paginators import LessonPaginator, CoursePaginator
+from .tasks import send_course_update_notification
+from datetime import datetime, timedelta
 
 
 # Для курсов (ViewSets)
@@ -23,6 +25,14 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+
+        # Проверка на 4 часа (доп. задание)
+        now = datetime.now(instance.updated_at.tzinfo)
+        if now - instance.updated_at > timedelta(hours=4):
+            send_course_update_notification.delay(instance.id)
 
 # Для уроков (Generic-классы)
 class LessonListCreateAPIView(generics.ListCreateAPIView):

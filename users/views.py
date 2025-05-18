@@ -62,37 +62,33 @@ class PaymentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Создаем продукт и цену в Stripe
+        # Создаем продукт в Stripe
         course = serializer.validated_data.get('paid_course')
         lesson = serializer.validated_data.get('paid_lesson')
 
         product_name = course.title if course else lesson.title
-        product = create_stripe_product(product_name, "Оплата обучения")
-        price = create_stripe_price(serializer.validated_data['amount'], product.id)
+        product = create_stripe_product(product_name)
+
+        # Создаем цену в Stripe
+        price = create_stripe_price(
+            amount=serializer.validated_data['amount'],
+            product_id=product.id
+        )
 
         # Создаем сессию оплаты
-        success_url = request.build_absolute_uri(
-            f"{reverse('payment-success')}?session_id={{CHECKOUT_SESSION_ID}}"
-        )
+        success_url = request.build_absolute_uri(reverse('payment-success'))
         cancel_url = request.build_absolute_uri(reverse('payment-cancel'))
+        session = create_stripe_session(price.id, success_url, cancel_url)
 
-        session = create_stripe_session(
-            price_id=price.id,
-            success_url=success_url,
-            cancel_url=cancel_url
-        )
-
-        # Сохраняем платеж
+        # Сохраняем платеж с ссылкой и ID сессии
         serializer.save(
             user=request.user,
             payment_link=session.url,
             stripe_session_id=session.id
         )
 
-        return Response(
-            {'payment_link': session.url},
-            status=status.HTTP_201_CREATED
-        )
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class PaymentSuccessView(APIView):
     """Обработчик успешной оплаты"""
