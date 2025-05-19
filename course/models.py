@@ -1,8 +1,16 @@
 from django.db import models
 from django.core.validators import MinLengthValidator, URLValidator
-
+from django.core.validators import URLValidator
+from .validators import validate_youtube_url
 
 class Course(models.Model):
+    owner = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Владелец"
+    )
     title = models.CharField(
         max_length=255,
         verbose_name="Название курса",
@@ -31,8 +39,15 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    owner = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Владелец"
+    )
     course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="courses", verbose_name="Курс"
+        Course, on_delete=models.CASCADE, related_name="lessons", verbose_name="Курс"
     )
     title = models.CharField(
         max_length=255,
@@ -54,8 +69,7 @@ class Lesson(models.Model):
         verbose_name="Ссылка на видео",
         help_text="Добавьте ссылку на видео",
     )
- 
- 
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
